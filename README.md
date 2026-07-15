@@ -4,16 +4,12 @@ Release is a command line tool to automatically generate a new [GitHub Release](
 
 ## Usage
 
-Firstly, install the package from [npm](https://npmjs.com/release):
+Install the package directly from GitHub using either npm or [pnpm](https://pnpm.io/):
 
 ```bash
-npm install -g release
-```
-
-Alternatively, you can use [pnpm](https://pnpm.io/) to install it:
-
-```bash
-pnpm add --global release
+npm install --global github:404mat/release
+# or
+pnpm add --global github:404mat/release
 ```
 
 Once that's done, you can run this command inside your project's directory:
@@ -99,8 +95,8 @@ Release makes it easy to generate GitHub Releases from the command line, without
 The GitHub OAuth callback service is configured with the `RELEASE_AUTH_URL` environment variable. Set `GITHUB_CLIENT_ID` to the client ID for the OAuth application used by that service.
 
 1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
-2. Uninstall the package if it's already installed: `npm uninstall -g release`
-3. Link the package to the global module directory: `npm link`
+2. Uninstall the package if it's already installed: `pnpm remove --global release`
+3. Link the package to the global module directory: `pnpm link --global`
 4. You can now use `release` on the command line!
 
 As always, you can use `pnpm test` to run the tests and see if your changes have broken anything.
