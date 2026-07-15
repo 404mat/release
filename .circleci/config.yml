@@ -11,15 +11,17 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "package.json" }}
+          - v2-pnpm-{{ checksum "pnpm-lock.yaml" }}
           # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+          - v2-pnpm-
 
-      - run: yarn
+      - run: npm install --global pnpm@11.3.0
+      - run: pnpm config set store-dir ~/.pnpm-store
+      - run: pnpm install --frozen-lockfile
 
       - save_cache:
           paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+            - ~/.pnpm-store
+          key: v2-pnpm-{{ checksum "pnpm-lock.yaml" }}
 
-      - run: yarn test
+      - run: pnpm test
