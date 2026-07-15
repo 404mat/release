@@ -94,10 +94,10 @@ const createRelease = async (tag, changelog, exists) => {
 	const body = {
 		owner: repoDetails.user,
 		repo: repoDetails.repo,
-		/* eslint-disable camelcase */
+		/* oxlint-disable camelcase */
 		tag_name: tag.tag,
 		target_commitish: tag.hash,
-		/* eslint-enable camelcase */
+		/* oxlint-enable camelcase */
 		body: changelog,
 		draft: !publish,
 		prerelease: pre
@@ -132,7 +132,7 @@ const createRelease = async (tag, changelog, exists) => {
 			console.log(`\n${chalk.bold('Done!')} Opened release in browser...`);
 
 			return;
-		// eslint-disable-next-line no-empty
+		// oxlint-disable-next-line no-empty
 		} catch (err) {}
 	}
 
@@ -390,7 +390,7 @@ const checkReleaseStatus = async () => {
 			console.error(`${prefix}. Opened in browser...`);
 
 			return;
-		// eslint-disable-next-line no-empty
+		// oxlint-disable-next-line no-empty
 		} catch (err) {}
 	}
 
