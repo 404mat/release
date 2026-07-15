@@ -2,10 +2,11 @@
   "name": "release",
   "version": "6.3.1",
   "description": "Generate changelogs with a single command",
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
-    "test": "yarn lint",
-    "lint": "eslint --ext .jsx,.js .",
-    "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs eslint"
+    "test": "pnpm lint",
+    "lint": "eslint --max-warnings 0 --report-unused-disable-directives --ext .jsx,.js .",
+    "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs eslint --max-warnings 0 --report-unused-disable-directives"
   },
   "files": [
     "bin",

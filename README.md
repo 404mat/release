@@ -10,10 +10,10 @@ Firstly, install the package from [npm](https://npmjs.com/release):
 npm install -g release
 ```
 
-Alternatively, you can use [Yarn](https://yarnpkg.com/en/) to install it:
+Alternatively, you can use [pnpm](https://pnpm.io/) to install it:
 
 ```bash
-yarn global add release
+pnpm add --global release
 ```
 
 Once that's done, you can run this command inside your project's directory:
@@ -103,7 +103,7 @@ The GitHub OAuth callback service is configured with the `RELEASE_AUTH_URL` envi
 3. Link the package to the global module directory: `npm link`
 4. You can now use `release` on the command line!
 
-As always, you can use `npm test` to run the tests and see if your changes have broken anything.
+As always, you can use `pnpm test` to run the tests and see if your changes have broken anything.
 
 ## Author
 
