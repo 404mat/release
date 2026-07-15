@@ -16,26 +16,6 @@
     node-fetch "^2.1.1"
     url-template "^2.0.8"
 
-"@zeit/eslint-config-base@0.2.13":
-  version "0.2.13"
-  resolved "https://registry.yarnpkg.com/@zeit/eslint-config-base/-/eslint-config-base-0.2.13.tgz#47c305edb184efb95cfd4bc83d3ed259ac2bd00d"
-  integrity sha512-onMpkltbQdpzGWU6sezPcj8jqNV5g17CITecPraBrnZ4S+5B5gIvhme1woKV3Y+Kd+ozCBrhUHfHlVhMZSY0FA==
-  dependencies:
-    arg "^1.0.0"
-    chalk "^2.3.0"
-
-"@zeit/eslint-config-node@0.2.13":
-  version "0.2.13"
-  resolved "https://registry.yarnpkg.com/@zeit/eslint-config-node/-/eslint-config-node-0.2.13.tgz#f6aabeb07d1f390830ce7be4774c829f070f3f81"
-  integrity sha512-E1bokneUXBxm8OVwSEzN52zq9G3NxqwYNJmJs7MuHtJkTLXprY1hpTdBwl6l3ikDfI5zfUEBx03mrG483Mv1vQ==
-  dependencies:
-    "@zeit/eslint-config-base" "0.2.13"
-
-"@zeit/git-hooks@0.1.4":
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@zeit/git-hooks/-/git-hooks-0.1.4.tgz#70583db5dd69726a62c7963520e67f2c3a33cc5f"
-  integrity sha512-NvgZgoYJ/n27Ly7lKxKttMIKSS8P4dr1EURgTmqihHVdTAEqVtkAYPT5XykZIR+GKz8WRGyEQVJekwSgvjYQLg==
-
 acorn-jsx@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/acorn-jsx/-/acorn-jsx-3.0.1.tgz#afdf9488fb1ecefc8348f6fb22f464e32a58b36b"

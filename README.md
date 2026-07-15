@@ -1,7 +1,3 @@
-<a aria-label="Vercel logo" href="https://vercel.com">
-  <img src="https://img.shields.io/badge/MADE%20BY%20Vercel-000000.svg?style=for-the-badge&logo=vercel&labelColor=000000&logoWidth=20">
-</a>
-
 # Release
 
 Release is a command line tool to automatically generate a new [GitHub Release](https://help.github.com/articles/creating-releases/) and populates it with the changes (commits) made since the last release.
@@ -96,11 +92,11 @@ In the example above, `markdown` contains the release as a `String` (if you just
 
 ## Why?
 
-As we at [Vercel](https://github.com/vercel) moved all of our GitHub repositories from keeping a `HISTORY.md` file to using [GitHub Releases](https://help.github.com/articles/creating-releases/), we needed a way to automatically generate these releases from our own devices, rather than always having to open a page in the browser and manually add the notes for each change.
+Release makes it easy to generate GitHub Releases from the command line, without having to open a browser and manually prepare the release notes.
 
 ## Contributing
 
-You can find the authentication flow [here](https://github.com/vercel/release-auth).
+The GitHub OAuth callback service is configured with the `RELEASE_AUTH_URL` environment variable. Set `GITHUB_CLIENT_ID` to the client ID for the OAuth application used by that service.
 
 1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
 2. Uninstall the package if it's already installed: `npm uninstall -g release`
@@ -108,10 +104,6 @@ You can find the authentication flow [here](https://github.com/vercel/release-au
 4. You can now use `release` on the command line!
 
 As always, you can use `npm test` to run the tests and see if your changes have broken anything.
-
-## Credits
-
-Thanks a lot to [Daniel Chatfield](https://github.com/danielchatfield) for donating the "release" name on [npm](https://www.npmjs.com) and [my lovely team](https://vercel.com/about) for telling me about their needs and how I can make this package as efficient as possible.
 
 ## Author
 
