@@ -4,6 +4,7 @@ package-lock.json
 
 # logs
 npm-debug.log
+pnpm-debug.log
 
 # VSCode
 .vscode/
