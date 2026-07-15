@@ -26,9 +26,9 @@ A `<type>` argument can be passed. If you leave it out, a [GitHub Release](https
 
 According to the [SemVer](https://semver.org) spec, the argument can have one of these values:
 
--   `major`: Incompatible API changes were introduced
--   `minor`: Functionality was added in a backwards-compatible manner
--   `patch`: Backwards-compatible bug fixes were applied
+- `major`: Incompatible API changes were introduced
+- `minor`: Functionality was added in a backwards-compatible manner
+- `patch`: Backwards-compatible bug fixes were applied
 
 In addition to those values, we also support creating pre-releases like `3.0.0-canary.1`:
 
@@ -73,9 +73,9 @@ With a custom hook, the examples above (and many more) are very easy to accompli
 By default, release will look for a file named `release.js` in the root directory of your project. This file should export a function with two parameters and always return a `String` (the final release):
 
 ```js
-module.exports = async (markdown, metaData) => {
-	// Use the available data to create a custom release
-	return markdown;
+export default async (markdown, metaData) => {
+  // Use the available data to create a custom release
+  return markdown;
 };
 ```
 
