@@ -229,7 +229,7 @@ const orderCommits = async (commits, tags, exists, publishRelease = createReleas
     questions.push({
       name: commit.hash,
       message,
-      type: 'list',
+      type: 'select',
       choices,
     });
   }

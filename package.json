@@ -16,10 +16,12 @@
   },
   "files": [
     "bin",
-    "lib"
+    "lib",
+    "scripts"
   ],
   "type": "module",
   "scripts": {
+    "postinstall": "node scripts/postinstall.js",
     "test": "pnpm lint",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
