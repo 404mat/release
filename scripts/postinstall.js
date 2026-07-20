@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import inquirer from 'inquirer';
+
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const skipPrompt =
   process.env.RELEASE_SKIP_GLOBAL_INSTALL_PROMPT === '1' ||
@@ -21,7 +25,7 @@ if (!skipPrompt) {
   ]);
 
   if (installGlobally) {
-    const result = spawnSync('pnpm', ['link', '--global'], {
+    const result = spawnSync('pnpm', ['add', '--global', packageRoot], {
       stdio: 'inherit',
       env: {
         ...process.env,

@@ -29,6 +29,10 @@ args
   .option(['H', 'hook'], 'Specify a custom file to pipe releases through')
   .option(['t', 'previous-tag'], 'Specify previous release', '')
   .option('tag-only', 'Create an annotated Git tag instead of a GitHub Release')
+  .option(
+    'dry-run',
+    'Print the release without writing, tagging, pushing, or uploading'
+  )
   .option(['u', 'show-url'], 'Show the release URL instead of opening it in the browser')
   .option(
     ['s', 'skip-questions'],
@@ -148,6 +152,28 @@ const createRelease = async (tag, changelog, exists) => {
   }
 
   console.log(`\n${chalk.bold('Done!')} ${releaseURL}`);
+};
+
+const printDryRun = async (tag, changelog, exists) => {
+  const action = exists ? 'update' : 'create';
+  const releaseKind = flags.tagOnly ? 'annotated Git tag' : 'GitHub Release';
+  const target = tag.hash ? ` targeting ${tag.hash}` : '';
+
+  if (global.spinner) {
+    global.spinner.succeed();
+    global.spinner = false;
+  }
+
+  console.log(
+    `\n${chalk.bold('Dry run')} Would ${action} ${releaseKind} ${chalk.bold(tag.tag)}${target}`
+  );
+
+  if (exists) {
+    console.log(`Would update existing release ${exists}`);
+  }
+
+  console.log(`\n${chalk.bold('Release notes')}\n`);
+  console.log(changelog);
 };
 
 const orderCommits = async (commits, tags, exists, publishRelease = createRelease) => {
@@ -301,12 +327,12 @@ const orderCommits = async (commits, tags, exists, publishRelease = createReleas
   await publishRelease(tags[0], filtered, exists);
 };
 
-const collectChanges = async (tags, exists = false, publishRelease) => {
+const collectChanges = async (tags, exists = false, publishRelease, options = {}) => {
   createSpinner('Loading commit history');
   let commits;
 
   try {
-    commits = await getCommits(tags);
+    commits = await getCommits(tags, options);
   } catch (err) {
     fail(err.message);
   }
@@ -328,6 +354,11 @@ const collectChanges = async (tags, exists = false, publishRelease) => {
 const createTagOnlyRelease = async (release) => {
   let previousTags;
 
+  if (flags.dryRun) {
+    githubConnection = await connect(flags.showUrl);
+    repoDetails = await getRepo(githubConnection);
+  }
+
   try {
     previousTags = await getTags({
       previousTag: flags.previousTag,
@@ -338,11 +369,14 @@ const createTagOnlyRelease = async (release) => {
 
   const previousTag = previousTags.at(-1);
   const tags = previousTag ? [release, previousTag] : [release];
+  const publishRelease = flags.dryRun ? printDryRun : createAnnotatedTag;
 
-  await collectChanges(tags, false, createAnnotatedTag);
+  await collectChanges(tags, false, publishRelease, {
+    includeLatest: flags.dryRun,
+  });
 };
 
-const checkReleaseStatus = async () => {
+const checkReleaseStatus = async (release = null) => {
   let tags;
 
   try {
@@ -354,11 +388,16 @@ const checkReleaseStatus = async () => {
     fail('Directory is not a Git repository.');
   }
 
+  if (release) {
+    const previousTag = tags.at(0);
+    tags = previousTag ? [release, previousTag] : [release];
+  }
+
   if (tags.length < 1) {
     fail('No tags available for release.');
   }
 
-  const synced = await branchSynced();
+  const synced = release ? true : await branchSynced();
 
   if (!synced) {
     fail('Your branch needs to be up-to-date with origin.');
@@ -385,7 +424,9 @@ const checkReleaseStatus = async () => {
   }
 
   if (!response.data || response.data.length < 1) {
-    await collectChanges(tags);
+    await collectChanges(tags, false, flags.dryRun ? printDryRun : createRelease, {
+      includeLatest: Boolean(release),
+    });
     return;
   }
 
@@ -399,13 +440,17 @@ const checkReleaseStatus = async () => {
   }
 
   if (!existingRelease) {
-    await collectChanges(tags);
+    await collectChanges(tags, false, flags.dryRun ? printDryRun : createRelease, {
+      includeLatest: Boolean(release),
+    });
     return;
   }
 
   if (flags.overwrite) {
     global.spinner.text = 'Overwriting release, because it already exists';
-    await collectChanges(tags, existingRelease.id);
+    await collectChanges(tags, existingRelease.id, flags.dryRun ? printDryRun : undefined, {
+      includeLatest: Boolean(release),
+    });
 
     return;
   }
@@ -416,7 +461,7 @@ const checkReleaseStatus = async () => {
   const releaseURL = getReleaseURL(existingRelease);
   const prefix = `${chalk.red('Error!')} Release already exists`;
 
-  if (!flags.showUrl) {
+  if (!flags.showUrl && !flags.dryRun) {
     try {
       await open(releaseURL, { wait: false });
       console.error(`${prefix}. Opened in browser...`);
@@ -473,10 +518,15 @@ const main = async () => {
       }
     }
 
-    const release = await bumpVersion(type, bumpType[1], flags.tagOnly);
+    const release = await bumpVersion(type, bumpType[1], flags.tagOnly, flags.dryRun);
 
     if (flags.tagOnly) {
       await createTagOnlyRelease(release);
+      return;
+    }
+
+    if (flags.dryRun) {
+      await checkReleaseStatus(release);
       return;
     }
   }
