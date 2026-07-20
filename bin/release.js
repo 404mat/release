@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Native
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
 // Packages
 import args from 'args';
 import chalk from 'chalk';
@@ -98,6 +102,48 @@ const getReleaseURL = (release, edit = false) => {
   return edit ? htmlURL.replace('/tag/', '/edit/') : htmlURL;
 };
 
+const getHead = async () => {
+  try {
+    const { stdout } = await promisify(execFile)('git', ['rev-parse', 'HEAD']);
+    return stdout.trim();
+  } catch {
+    fail('Directory is not a Git repository.');
+  }
+};
+
+const getTagPrefix = (tag) => tag.slice(0, -semVer.valid(tag).length);
+
+const getInferredReleaseType = (grouped) => {
+  for (const type of changeTypes) {
+    if (grouped[type.handle].length > 0) {
+      return type.handle;
+    }
+  }
+
+  return null;
+};
+
+const applyInferredDryRunTag = (tags, grouped) => {
+  if (!flags.dryRun || !flags.tagOnly || args.sub.length > 0 || tags.length < 2) {
+    return;
+  }
+
+  const releaseType = getInferredReleaseType(grouped);
+
+  if (!releaseType) {
+    return;
+  }
+
+  const previousTag = tags[1];
+  const version = semVer.inc(previousTag.version, releaseType);
+
+  tags[0] = {
+    ...tags[0],
+    tag: `${getTagPrefix(previousTag.tag)}${version}`,
+    version,
+  };
+};
+
 const createRelease = async (tag, changelog, exists) => {
   const isPre = flags.pre ? 'pre' : '';
   createSpinner(`Uploading ${isPre}release`);
@@ -156,6 +202,7 @@ const createRelease = async (tag, changelog, exists) => {
 
 const printDryRun = async (tag, changelog, exists) => {
   const action = exists ? 'update' : 'create';
+  const isTagOnlyWithoutBump = flags.tagOnly && args.sub.length < 1;
   const releaseKind = flags.tagOnly ? 'annotated Git tag' : 'GitHub Release';
   const target = tag.hash ? ` targeting ${tag.hash}` : '';
 
@@ -168,6 +215,10 @@ const printDryRun = async (tag, changelog, exists) => {
     `\n${chalk.bold('Dry run')} Would ${action} ${releaseKind} ${chalk.bold(tag.tag)}${target}`
   );
 
+  if (isTagOnlyWithoutBump) {
+    console.log('Version bump inferred from selected change types.');
+  }
+
   if (exists) {
     console.log(`Would update existing release ${exists}`);
   }
@@ -176,7 +227,13 @@ const printDryRun = async (tag, changelog, exists) => {
   console.log(changelog);
 };
 
-const orderCommits = async (commits, tags, exists, publishRelease = createRelease) => {
+const orderCommits = async (
+  commits,
+  tags,
+  exists,
+  publishRelease = createRelease,
+  options = {}
+) => {
   const questions = [];
   const predefined = {};
 
@@ -298,6 +355,11 @@ const orderCommits = async (commits, tags, exists, publishRelease = createReleas
 
   const results = Object.assign({}, predefined, answers);
   const grouped = groupChanges(results, changeTypes);
+  applyInferredDryRunTag(tags, grouped);
+
+  const existingRelease =
+    options.releases?.find((release) => release.tag_name === tags[0].tag)?.id || exists;
+
   const changes = await createChangelog(
     grouped,
     commits,
@@ -324,7 +386,7 @@ const orderCommits = async (commits, tags, exists, publishRelease = createReleas
     authors: credits,
   });
 
-  await publishRelease(tags[0], filtered, exists);
+  await publishRelease(tags[0], filtered, existingRelease);
 };
 
 const collectChanges = async (tags, exists = false, publishRelease, options = {}) => {
@@ -348,7 +410,7 @@ const collectChanges = async (tags, exists = false, publishRelease, options = {}
     fail('No changes happened since the last release.');
   }
 
-  await orderCommits(commits, tags, exists, publishRelease);
+  await orderCommits(commits, tags, exists, publishRelease, options);
 };
 
 const createTagOnlyRelease = async (release) => {
@@ -391,13 +453,29 @@ const checkReleaseStatus = async (release = null) => {
   if (release) {
     const previousTag = tags.at(0);
     tags = previousTag ? [release, previousTag] : [release];
+  } else if (flags.dryRun && flags.tagOnly) {
+    const previousTag = tags.at(0);
+
+    if (!previousTag) {
+      fail('No tags available for release.');
+    }
+
+    tags = [
+      {
+        tag: 'HEAD',
+        version: previousTag.version,
+        hash: await getHead(),
+        date: new Date(),
+      },
+      previousTag,
+    ];
   }
 
   if (tags.length < 1) {
     fail('No tags available for release.');
   }
 
-  const synced = release ? true : await branchSynced();
+  const synced = flags.dryRun || release ? true : await branchSynced();
 
   if (!synced) {
     fail('Your branch needs to be up-to-date with origin.');
@@ -425,7 +503,8 @@ const checkReleaseStatus = async (release = null) => {
 
   if (!response.data || response.data.length < 1) {
     await collectChanges(tags, false, flags.dryRun ? printDryRun : createRelease, {
-      includeLatest: Boolean(release),
+      includeLatest: Boolean(release) || flags.tagOnly,
+      releases: response.data,
     });
     return;
   }
@@ -441,7 +520,8 @@ const checkReleaseStatus = async (release = null) => {
 
   if (!existingRelease) {
     await collectChanges(tags, false, flags.dryRun ? printDryRun : createRelease, {
-      includeLatest: Boolean(release),
+      includeLatest: Boolean(release) || flags.tagOnly,
+      releases: response.data,
     });
     return;
   }
@@ -449,7 +529,17 @@ const checkReleaseStatus = async (release = null) => {
   if (flags.overwrite) {
     global.spinner.text = 'Overwriting release, because it already exists';
     await collectChanges(tags, existingRelease.id, flags.dryRun ? printDryRun : undefined, {
-      includeLatest: Boolean(release),
+      includeLatest: Boolean(release) || flags.tagOnly,
+      releases: response.data,
+    });
+
+    return;
+  }
+
+  if (flags.dryRun) {
+    await collectChanges(tags, existingRelease.id, printDryRun, {
+      includeLatest: Boolean(release) || flags.tagOnly,
+      releases: response.data,
     });
 
     return;
@@ -492,7 +582,7 @@ const main = async () => {
   const argAmount = bumpType.length;
   const isBump = argAmount === 1 || (bumpType[0] === 'pre' && argAmount === 2);
 
-  if (flags.tagOnly && !isBump) {
+  if (flags.tagOnly && !isBump && !flags.dryRun) {
     fail('The "--tag-only" option requires a version bump.');
   }
 
@@ -510,7 +600,7 @@ const main = async () => {
       fail('Version type not SemVer-compatible ' + '("major", "minor", "patch" or "pre")');
     }
 
-    if (flags.tagOnly) {
+    if (flags.tagOnly && !flags.dryRun) {
       const synced = await branchSynced();
 
       if (!synced) {
