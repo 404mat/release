@@ -53,6 +53,16 @@ containing the generated changelog, without creating a GitHub Release:
 release patch --tag-only
 ```
 
+Add `--dry-run` to preview the release that would be created without writing
+files, creating commits or tags, pushing, uploading to GitHub, or opening the
+browser:
+
+```bash
+release patch --dry-run
+```
+
+Dry runs still authenticate with GitHub and check repository/release state.
+
 ## Options
 
 The following command will show you a list of all available options:
