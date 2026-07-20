@@ -40,6 +40,19 @@ release pre <suffix>
 
 Assuming that you provide "beta" as the `<suffix>` your release will then be `3.0.0-beta.1` – and so on...
 
+When creating a version bump, Release preserves the format of the latest release
+tag. For example, after `v1.2.3`, a patch bump creates `v1.2.4`. The version in
+`package.json` remains standard SemVer without the prefix. To prevent accidental
+releases, Release stops if the latest release tag and `package.json` have
+different versions.
+
+Add `--tag-only` to a version bump to create and push an annotated Git tag
+containing the generated changelog, without creating a GitHub Release:
+
+```bash
+release patch --tag-only
+```
+
 ## Options
 
 The following command will show you a list of all available options:
