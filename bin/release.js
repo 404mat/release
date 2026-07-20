@@ -10,7 +10,7 @@ import sleep from 'delay';
 
 // Utilities
 import applyHook from '../lib/hook.js';
-import bumpVersion from '../lib/bump.js';
+import bumpVersion, { createAnnotatedTag } from '../lib/bump.js';
 import connect from '../lib/connect.js';
 import createChangelog from '../lib/changelog.js';
 import * as definitions from '../lib/definitions.js';
@@ -28,6 +28,7 @@ args
   .option('publish', 'Instead of creating a draft, publish the release')
   .option(['H', 'hook'], 'Specify a custom file to pipe releases through')
   .option(['t', 'previous-tag'], 'Specify previous release', '')
+  .option('tag-only', 'Create an annotated Git tag instead of a GitHub Release')
   .option(['u', 'show-url'], 'Show the release URL instead of opening it in the browser')
   .option(
     ['s', 'skip-questions'],
@@ -149,7 +150,7 @@ const createRelease = async (tag, changelog, exists) => {
   console.log(`\n${chalk.bold('Done!')} ${releaseURL}`);
 };
 
-const orderCommits = async (commits, tags, exists) => {
+const orderCommits = async (commits, tags, exists, publishRelease = createRelease) => {
   const questions = [];
   const predefined = {};
 
@@ -297,11 +298,10 @@ const orderCommits = async (commits, tags, exists) => {
     authors: credits,
   });
 
-  // Upload changelog to GitHub Releases
-  await createRelease(tags[0], filtered, exists);
+  await publishRelease(tags[0], filtered, exists);
 };
 
-const collectChanges = async (tags, exists = false) => {
+const collectChanges = async (tags, exists = false, publishRelease) => {
   createSpinner('Loading commit history');
   let commits;
 
@@ -322,7 +322,24 @@ const collectChanges = async (tags, exists = false) => {
     fail('No changes happened since the last release.');
   }
 
-  await orderCommits(commits, tags, exists);
+  await orderCommits(commits, tags, exists, publishRelease);
+};
+
+const createTagOnlyRelease = async (release) => {
+  let previousTags;
+
+  try {
+    previousTags = await getTags({
+      previousTag: flags.previousTag,
+    });
+  } catch {
+    fail('Directory is not a Git repository.');
+  }
+
+  const previousTag = previousTags.at(-1);
+  const tags = previousTag ? [release, previousTag] : [release];
+
+  await collectChanges(tags, false, createAnnotatedTag);
 };
 
 const checkReleaseStatus = async () => {
@@ -428,8 +445,13 @@ const main = async () => {
 
   const bumpType = args.sub;
   const argAmount = bumpType.length;
+  const isBump = argAmount === 1 || (bumpType[0] === 'pre' && argAmount === 2);
 
-  if (argAmount === 1 || (bumpType[0] === 'pre' && argAmount === 2)) {
+  if (flags.tagOnly && !isBump) {
+    fail('The "--tag-only" option requires a version bump.');
+  }
+
+  if (isBump) {
     const allowedTypes = ['pre'];
 
     for (const type of changeTypes) {
@@ -443,7 +465,20 @@ const main = async () => {
       fail('Version type not SemVer-compatible ' + '("major", "minor", "patch" or "pre")');
     }
 
-    await bumpVersion(type, bumpType[1]);
+    if (flags.tagOnly) {
+      const synced = await branchSynced();
+
+      if (!synced) {
+        fail('Your branch needs to be up-to-date with origin.');
+      }
+    }
+
+    const release = await bumpVersion(type, bumpType[1], flags.tagOnly);
+
+    if (flags.tagOnly) {
+      await createTagOnlyRelease(release);
+      return;
+    }
   }
 
   await checkReleaseStatus();
