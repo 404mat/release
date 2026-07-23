@@ -429,7 +429,7 @@ const createTagOnlyRelease = async (release) => {
     fail('Directory is not a Git repository.');
   }
 
-  const previousTag = previousTags.at(-1);
+  const previousTag = flags.previousTag ? previousTags.at(-1) : previousTags.at(0);
   const tags = previousTag ? [release, previousTag] : [release];
   const publishRelease = flags.dryRun ? printDryRun : createAnnotatedTag;
 
