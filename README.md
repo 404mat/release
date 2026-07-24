@@ -53,6 +53,15 @@ containing the generated changelog, without creating a GitHub Release:
 release patch --tag-only
 ```
 
+Add `--summary` (or `-S`) to provide short update text separately from the
+generated changelog. For tag-only releases, the summary is stored as
+`Update-Summary` metadata in the annotated tag so a publishing workflow can
+include it in an application's update feed:
+
+```bash
+release patch --tag-only --summary "New categorization feature, improvements, and more"
+```
+
 Add `--dry-run` to preview the release that would be created without writing
 files, creating commits or tags, pushing, uploading to GitHub, or opening the
 browser:

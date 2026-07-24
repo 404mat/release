@@ -32,11 +32,9 @@ args
   .option('publish', 'Instead of creating a draft, publish the release')
   .option(['H', 'hook'], 'Specify a custom file to pipe releases through')
   .option(['t', 'previous-tag'], 'Specify previous release', '')
+  .option(['S', 'summary'], 'Specify a short update summary', '')
   .option('tag-only', 'Create an annotated Git tag instead of a GitHub Release')
-  .option(
-    'dry-run',
-    'Print the release without writing, tagging, pushing, or uploading'
-  )
+  .option('dry-run', 'Print the release without writing, tagging, pushing, or uploading')
   .option(['u', 'show-url'], 'Show the release URL instead of opening it in the browser')
   .option(
     ['s', 'skip-questions'],
@@ -225,6 +223,11 @@ const printDryRun = async (tag, changelog, exists) => {
 
   console.log(`\n${chalk.bold('Release notes')}\n`);
   console.log(changelog);
+
+  if (flags.summary) {
+    console.log(`\n${chalk.bold('Update summary')}\n`);
+    console.log(flags.summary);
+  }
 };
 
 const orderCommits = async (
@@ -431,7 +434,9 @@ const createTagOnlyRelease = async (release) => {
 
   const previousTag = flags.previousTag ? previousTags.at(-1) : previousTags.at(0);
   const tags = previousTag ? [release, previousTag] : [release];
-  const publishRelease = flags.dryRun ? printDryRun : createAnnotatedTag;
+  const publishRelease = flags.dryRun
+    ? printDryRun
+    : (tag, changelog) => createAnnotatedTag(tag, changelog, flags.summary);
 
   await collectChanges(tags, false, publishRelease, {
     includeLatest: flags.dryRun,
@@ -566,6 +571,16 @@ const checkReleaseStatus = async (release = null) => {
 };
 
 const main = async () => {
+  flags.summary = flags.summary.trim();
+
+  if (/[\r\n]/.test(flags.summary)) {
+    fail('The update summary must fit on one line.');
+  }
+
+  if (flags.summary && !flags.tagOnly) {
+    fail('The "--summary" option requires "--tag-only".');
+  }
+
   let update = null;
 
   try {

@@ -22,7 +22,7 @@
   "type": "module",
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
-    "test": "pnpm lint",
+    "test": "node --test && pnpm lint",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
     "lint": "oxlint ."
