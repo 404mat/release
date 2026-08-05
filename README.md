@@ -15,10 +15,16 @@ pnpm add --global github:404mat/release
 Once that's done, you can run this command inside your project's directory:
 
 ```bash
-release <type>
+release
 ```
 
-A `<type>` argument can be passed. If you leave it out, a [GitHub Release](https://help.github.com/articles/creating-releases/) will be created from the most recent commit and tag.
+Running `release` without arguments starts an interactive prompt where you can
+choose the release type, whether to create an annotated tag only, and an update
+summary for tag-only releases. Choose "No version bump" to create a
+[GitHub Release](https://help.github.com/articles/creating-releases/) from the
+most recent commit and tag.
+
+A `<type>` argument can still be passed for non-interactive use.
 
 According to the [SemVer](https://semver.org) spec, the argument can have one of these values:
 
