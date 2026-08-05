@@ -721,4 +721,12 @@ const main = async () => {
 };
 
 // Let the firework start
-await main();
+try {
+  await main();
+} catch (error) {
+  if (error?.name !== 'ExitPromptError') {
+    throw error;
+  }
+
+  console.error(chalk.red('\nUser quit the program'));
+}
