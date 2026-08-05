@@ -73,6 +73,85 @@ const changeTypes = [
   },
 ];
 
+const promptForReleaseOptions = async () => {
+  if (args.sub.length > 0 || !process.stdin.isTTY || !process.stdout.isTTY) {
+    return;
+  }
+
+  const { type } = await inquirer.prompt([
+    {
+      name: 'type',
+      type: 'select',
+      message: 'What kind of release do you want to make?',
+      choices: [
+        ...changeTypes.map((changeType) => ({
+          name: `${changeType.name} (${changeType.description})`,
+          value: changeType.handle,
+        })),
+        {
+          name: 'Prerelease',
+          value: 'pre',
+        },
+        ...(flags.tagOnly && !flags.dryRun
+          ? []
+          : [
+              {
+                name: 'No version bump (create a release from the current tag)',
+                value: 'none',
+              },
+            ]),
+      ],
+      default: 'patch',
+    },
+  ]);
+
+  if (type === 'none') {
+    return;
+  }
+
+  args.sub.push(type);
+
+  if (type === 'pre') {
+    const { suffix } = await inquirer.prompt([
+      {
+        name: 'suffix',
+        type: 'input',
+        message: 'What prerelease suffix should be used?',
+        default: 'canary',
+      },
+    ]);
+
+    if (suffix.trim()) {
+      args.sub.push(suffix.trim());
+    }
+  }
+
+  if (!flags.tagOnly) {
+    const { tagOnly } = await inquirer.prompt([
+      {
+        name: 'tagOnly',
+        type: 'confirm',
+        message: 'Create an annotated Git tag only?',
+        default: false,
+      },
+    ]);
+
+    flags.tagOnly = tagOnly;
+  }
+
+  if (flags.tagOnly && !flags.summary) {
+    const { summary } = await inquirer.prompt([
+      {
+        name: 'summary',
+        type: 'input',
+        message: 'Add an optional update summary to the tag?',
+      },
+    ]);
+
+    flags.summary = summary;
+  }
+};
+
 const checkForUpdate = async () => {
   const encoded = encodeURIComponent(pkg.name).replace(/^%40/, '@');
   const response = await fetch(`https://registry.npmjs.org/${encoded}`);
@@ -571,6 +650,8 @@ const checkReleaseStatus = async (release = null) => {
 };
 
 const main = async () => {
+  await promptForReleaseOptions();
+
   flags.summary = flags.summary.trim();
 
   if (/[\r\n]/.test(flags.summary)) {
