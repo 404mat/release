@@ -14,7 +14,7 @@ import sleep from 'delay';
 
 // Utilities
 import applyHook from '../lib/hook.js';
-import bumpVersion, { createAnnotatedTag } from '../lib/bump.js';
+import bumpVersion, { createAnnotatedTag, publishVersion } from '../lib/bump.js';
 import connect from '../lib/connect.js';
 import createChangelog from '../lib/changelog.js';
 import * as definitions from '../lib/definitions.js';
@@ -42,6 +42,7 @@ args
   );
 
 const flags = args.parse(process.argv);
+const isInteractive = args.sub.length === 0 && process.stdin.isTTY && process.stdout.isTTY;
 
 // When running `release pre`, the release
 // should automatically be marked as a pre-release
@@ -73,8 +74,20 @@ const changeTypes = [
   },
 ];
 
+const validateSummary = () => {
+  flags.summary = flags.summary.trim();
+
+  if (/[\r\n]/.test(flags.summary)) {
+    fail('The update summary must fit on one line.');
+  }
+
+  if (flags.summary && !flags.tagOnly) {
+    fail('The "--summary" option requires "--tag-only".');
+  }
+};
+
 const promptForReleaseOptions = async () => {
-  if (args.sub.length > 0 || !process.stdin.isTTY || !process.stdout.isTTY) {
+  if (!isInteractive) {
     return;
   }
 
@@ -125,6 +138,12 @@ const promptForReleaseOptions = async () => {
       args.sub.push(suffix.trim());
     }
   }
+};
+
+const promptForTagOptions = async () => {
+  if (!isInteractive || args.sub.length === 0) {
+    return;
+  }
 
   if (!flags.tagOnly) {
     const { tagOnly } = await inquirer.prompt([
@@ -150,6 +169,8 @@ const promptForReleaseOptions = async () => {
 
     flags.summary = summary;
   }
+
+  validateSummary();
 };
 
 const checkForUpdate = async () => {
@@ -468,7 +489,30 @@ const orderCommits = async (
     authors: credits,
   });
 
-  await publishRelease(tags[0], filtered, existingRelease);
+  let finalPublishRelease = publishRelease;
+
+  if (options.deferReleaseMode) {
+    if (global.spinner) {
+      global.spinner.succeed();
+      global.spinner = false;
+    }
+
+    await promptForTagOptions();
+
+    if (flags.dryRun) {
+      finalPublishRelease = printDryRun;
+    } else if (flags.tagOnly) {
+      finalPublishRelease = (tag, releaseChangelog) =>
+        createAnnotatedTag(tag, releaseChangelog, flags.summary);
+    } else {
+      finalPublishRelease = async (tag, releaseChangelog, existing) => {
+        await publishVersion(tag);
+        await createRelease(tag, releaseChangelog, existing);
+      };
+    }
+  }
+
+  await finalPublishRelease(tags[0], filtered, existingRelease);
 };
 
 const collectChanges = async (tags, exists = false, publishRelease, options = {}) => {
@@ -522,7 +566,7 @@ const createTagOnlyRelease = async (release) => {
   });
 };
 
-const checkReleaseStatus = async (release = null) => {
+const checkReleaseStatus = async (release = null, options = {}) => {
   let tags;
 
   try {
@@ -589,6 +633,7 @@ const checkReleaseStatus = async (release = null) => {
     await collectChanges(tags, false, flags.dryRun ? printDryRun : createRelease, {
       includeLatest: Boolean(release) || flags.tagOnly,
       releases: response.data,
+      ...options,
     });
     return;
   }
@@ -606,6 +651,7 @@ const checkReleaseStatus = async (release = null) => {
     await collectChanges(tags, false, flags.dryRun ? printDryRun : createRelease, {
       includeLatest: Boolean(release) || flags.tagOnly,
       releases: response.data,
+      ...options,
     });
     return;
   }
@@ -615,6 +661,7 @@ const checkReleaseStatus = async (release = null) => {
     await collectChanges(tags, existingRelease.id, flags.dryRun ? printDryRun : undefined, {
       includeLatest: Boolean(release) || flags.tagOnly,
       releases: response.data,
+      ...options,
     });
 
     return;
@@ -624,6 +671,7 @@ const checkReleaseStatus = async (release = null) => {
     await collectChanges(tags, existingRelease.id, printDryRun, {
       includeLatest: Boolean(release) || flags.tagOnly,
       releases: response.data,
+      ...options,
     });
 
     return;
@@ -651,16 +699,7 @@ const checkReleaseStatus = async (release = null) => {
 
 const main = async () => {
   await promptForReleaseOptions();
-
-  flags.summary = flags.summary.trim();
-
-  if (/[\r\n]/.test(flags.summary)) {
-    fail('The update summary must fit on one line.');
-  }
-
-  if (flags.summary && !flags.tagOnly) {
-    fail('The "--summary" option requires "--tag-only".');
-  }
+  validateSummary();
 
   let update = null;
 
@@ -704,7 +743,18 @@ const main = async () => {
       }
     }
 
-    const release = await bumpVersion(type, bumpType[1], flags.tagOnly, flags.dryRun);
+    const deferReleaseMode = isInteractive && isBump;
+    const release = await bumpVersion(
+      type,
+      bumpType[1],
+      flags.tagOnly || deferReleaseMode,
+      flags.dryRun
+    );
+
+    if (deferReleaseMode) {
+      await checkReleaseStatus(release, { deferReleaseMode: true });
+      return;
+    }
 
     if (flags.tagOnly) {
       await createTagOnlyRelease(release);
