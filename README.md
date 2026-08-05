@@ -22,7 +22,8 @@ Running `release` without arguments starts an interactive prompt where you can
 choose the release type, whether to create an annotated tag only, and an update
 summary for tag-only releases. Choose "No version bump" to create a
 [GitHub Release](https://help.github.com/articles/creating-releases/) from the
-most recent commit and tag.
+most recent commit and tag. The tag-only and summary questions appear after
+the commits have been classified and the changelog has been generated.
 
 A `<type>` argument can still be passed for non-interactive use.
 
@@ -77,6 +78,7 @@ release patch --dry-run
 ```
 
 Dry runs still authenticate with GitHub and check repository/release state.
+Running `release --dry-run` without a type also uses the interactive prompts.
 
 ## Options
 
