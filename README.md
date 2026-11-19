@@ -1,6 +1,6 @@
 # Release
 
-Release turns the commits since your last release into a [GitHub Release](https://help.github.com/articles/creating-releases/), or into an annotated Git tag. It groups changes by type, writes the changelog, bumps `package.json`, commits, tags, pushes, and creates the release — or, for a tag-only release, stops after the tag. It ships as a single binary for macOS and Linux, and needs only `git` and an authenticated [`gh`](https://cli.github.com), which it reads its token from: credentials are never stored.
+Release turns the commits since your last release into a [GitHub Release](https://help.github.com/articles/creating-releases/), or into an annotated Git tag. It groups changes by type, writes the changelog, bumps the version in `package.json` or `Cargo.toml`, commits, tags, pushes, and creates the release — or, for a tag-only release, stops after the tag. It ships as a single binary for macOS and Linux, and needs only `git` and an authenticated [`gh`](https://cli.github.com), which it reads its token from: credentials are never stored.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/404mat/release/main/scripts/install.sh | sh
