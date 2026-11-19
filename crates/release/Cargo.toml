@@ -1,0 +1,20 @@
+[package]
+name = "release"
+description = "Generate changelogs with a single command"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+default-run = "release"
+
+[[bin]]
+name = "release"
+path = "src/main.rs"
+
+[dependencies]
+release-core.workspace = true
+release-cli.workspace = true
+release-tui.workspace = true
+clap.workspace = true

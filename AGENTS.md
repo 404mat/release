@@ -16,9 +16,9 @@ Fight entropy. Leave the codebase better than you found it.
 
 ## Code Conventions
 
-- Follow the existing JavaScript style and Oxlint/Oxfmt configuration.
+- Follow the existing Rust style: `cargo fmt --all` and `cargo clippy --workspace --all-targets -- -D warnings`.
 - Keep changes focused and consistent with nearby code.
-- Never edit `package.json` dependencies manually; always use the package manager CLI.
+- Never edit `Cargo.toml` dependencies by hand when a version already resolves; let cargo pick versions, and commit `Cargo.lock`.
 
 ## Critical Rules
 

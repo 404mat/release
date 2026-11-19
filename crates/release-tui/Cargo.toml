@@ -1,0 +1,17 @@
+[package]
+name = "release-tui"
+description = "Interactive terminal frontend for release"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+release-core.workspace = true
+ratatui.workspace = true
+crossterm.workspace = true
+
+[dev-dependencies]
+semver.workspace = true

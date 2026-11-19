@@ -1,2 +1,0 @@
-allowBuilds:
-  '@zeit/git-hooks': true

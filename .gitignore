@@ -1,10 +1,5 @@
-# dependencies
-node_modules
-package-lock.json
+# rust
+/target
 
-# logs
-npm-debug.log
-pnpm-debug.log
-
-# VSCode
+# editors
 .vscode/
